@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harmonic Representations in Symbolic Music Transformers</title>
+<style>
+  :root {
+    --blue-dark:  #0d1b3e;
+    --blue-mid:   #1e3a8a;
+    --blue:       #2563eb;
+    --blue-light: #dbeafe;
+    --red-dark:   #991b1b;
+    --red:        #b91c1c;
+    --red-light:  #fee2e2;
+    --bg:         #f8f9fc;
+    --card:       #ffffff;
+    --border:     #dde1e9;
+    --text:       #1a1a1a;
+    --muted:      #5a6474;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 3rem 2rem 2.2rem;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    max-width: 1060px;
+    margin: 0 auto;
+    line-height: 1.35;
+  }
+  header .subtitle { margin-top: 0.7rem; font-size: 0.9rem; opacity: 0.6; }
+
+  /* ── Main ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 2.8rem 1.5rem 5rem; }
+
+
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 3.5rem;
+  }
+  .section-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    margin-bottom: 0.25rem;
+  }
+  .section h2 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: var(--blue-dark);
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 2px solid var(--blue-light);
+  }
+  .motivation h2 {
+    font-size: 1.65rem;
+    font-weight: 800;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0.9rem;
+  }
+  .section p {
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+
+  /* ── Finding pill ── */
+  .finding {
+    display: inline-block;
+    background: var(--blue-light);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 5px 5px 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.91rem;
+    font-weight: 500;
+    color: var(--blue-mid);
+    margin: 0.8rem 0;
+    width: 100%;
+  }
+  .finding.red {
+    background: var(--red-light);
+    border-color: var(--red);
+    color: var(--red-dark);
+  }
+
+  /* ── Figure ── */
+  .fig {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+  .fig img { width: 100%; display: block; }
+  .fig figcaption {
+    padding: 0.6rem 1rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .fig figcaption strong { color: var(--text); }
+
+  .fig-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  @media (max-width: 580px) { .fig-row { grid-template-columns: 1fr; } }
+
+  /* ── Audio cards ── */
+  .audio-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.9rem;
+    margin: 0.9rem 0;
+  }
+  .acard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 0.9rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .acard .alabel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 1.4rem;
+  }
+  .acard .asub { font-size: 0.73rem; color: var(--muted); margin-bottom: 0.45rem; min-height: 2.4rem; }
+  .acard audio { width: 100%; height: 30px; display: block; }
+  .roll-wrap {
+    position: relative; width: 100%; height: 80px;
+    flex-shrink: 0;
+    margin-bottom: 5px; border-radius: 4px;
+    overflow: hidden; background: #f0f0f0;
+  }
+  .roll-wrap canvas { display: block; height: 100%; }
+
+  /* ── Tags ── */
+  .tag {
+    display: inline-block;
+    font-size: 0.63rem; font-weight: 700;
+    padding: 0.04rem 0.4rem; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .tag-major { background: var(--red-light);  color: var(--red-dark); }
+  .tag-minor { background: var(--blue-light); color: var(--blue-mid); }
+  .tag-patch { background: #fef3cd; color: #7a5c00; }
+  .tag-steer { background: var(--blue-light); color: var(--blue-mid); }
+
+  /* ── Steer grid ── */
+  .sgrid {
+    display: grid;
+    grid-template-columns: 90px 1fr 1fr 1fr;
+    gap: 4px 8px;
+    align-items: center;
+    margin: 1rem 0;
+  }
+  .sgrid-head {
+    text-align: center; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--blue-mid); background: var(--blue-light);
+    padding: 3px; border-radius: 3px;
+  }
+  .sgrid-label {
+    font-size: 0.8rem; font-weight: 600; color: var(--blue-mid);
+    border-right: 2px solid var(--border); padding-right: 8px;
+    align-self: stretch; display: flex;
+    align-items: center; justify-content: flex-end; text-align: right;
+  }
+  .sgrid-sep { grid-column: 1/-1; height: 6px; }
+  .sgrid-note {
+    grid-column: 1/-1;
+    font-size: 0.76rem; color: var(--muted); padding: 2px 0;
+  }
+  .sgrid-note strong { color: var(--text); }
+  audio.sm { height: 28px; width: 100%; display: block; }
+
+  /* ── Takeaway ── */
+  .takeaway {
+    background: var(--blue-dark);
+    color: white;
+    border-radius: 10px;
+    padding: 1.8rem 2rem;
+    margin-top: 2.5rem;
+  }
+  .takeaway .tk-label {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; opacity: 0.55; margin-bottom: 0.6rem;
+  }
+  .takeaway p { font-size: 0.97rem; line-height: 1.75; opacity: 0.9; margin-bottom: 0.8rem; }
+  .takeaway p:last-child { margin-bottom: 0; }
+  .takeaway .future {
+    margin-top: 1.1rem; padding-top: 1.1rem;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    font-size: 0.88rem; opacity: 0.72; line-height: 1.7;
+  }
+  .takeaway .future strong { opacity: 1; }
+
+  /* ── Token visualization ── */
+  .tok-viz {
+    display: flex; align-items: center; gap: 0.5rem;
+    overflow-x: auto; background: var(--card);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .tok-model {
+    background: var(--blue-dark); color: white;
+    border-radius: 6px; padding: 0.45rem 0.75rem;
+    font-size: 0.8rem; font-weight: 700;
+    white-space: nowrap; flex-shrink: 0; align-self: center;
+  }
+  .tok-arr {
+    color: var(--muted); font-size: 0.82rem;
+    align-self: center; flex-shrink: 0; padding: 0 0.15rem;
+    white-space: nowrap;
+  }
+  .tok-seq { display: flex; gap: 0.35rem; align-items: flex-start; flex-shrink: 0; }
+  .tok-note { display: flex; flex-direction: column; align-items: center; gap: 0.22rem; }
+  .tok-triplet { display: flex; gap: 0.1rem; }
+  .tok {
+    font-size: 0.61rem; font-family: monospace; font-weight: 600;
+    padding: 0.12rem 0.28rem; border-radius: 3px; white-space: nowrap;
+  }
+  .tok-p { background: var(--blue-light); color: var(--blue-mid); }
+  .tok-o { background: #d1fae5; color: #065f46; }
+  .tok-d { background: #fef3cd; color: #7a5c00; }
+  .tok-p.tok-changed {
+    background: var(--red-light); color: var(--red-dark);
+    outline: 2px solid var(--red); outline-offset: 1px;
+  }
+  .tok-nlabel { font-size: 0.57rem; color: var(--muted); text-align: center; }
+  .tok-nlabel.changed { color: var(--red); font-weight: 700; }
+  .tok-sep { width: 1px; background: var(--border); height: 42px; align-self: center; flex-shrink: 0; }
+  .tok-dots { align-self: center; color: var(--muted); padding: 0 0.2rem; font-size: 1rem; }
+
+  /* ── Analogy card ── */
+  .analogy {
+    display: grid;
+    grid-template-columns: 1fr 36px 1fr;
+    gap: 0 0.6rem;
+    align-items: center;
+    margin: 1.2rem 0;
+  }
+  .analogy-side {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+  }
+  .analogy-side.nlp  { border-top: 3px solid #64748b; }
+  .analogy-side.music { border-top: 3px solid var(--blue); }
+  .analogy-tag {
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.09em; color: var(--muted); margin-bottom: 0.55rem;
+  }
+  .analogy-run {
+    font-size: 0.82rem; color: var(--text);
+    background: var(--bg); border-radius: 4px;
+    padding: 0.22rem 0.5rem; margin-bottom: 0.25rem;
+  }
+  .analogy-run strong { color: var(--blue-dark); }
+  .analogy-change {
+    font-size: 0.75rem; color: var(--muted);
+    margin: 0.5rem 0 0.35rem; font-style: italic;
+  }
+  .analogy-q {
+    font-size: 0.82rem; font-weight: 700; color: var(--blue-mid);
+  }
+  .analogy-eq {
+    text-align: center; font-size: 1.3rem; color: var(--muted);
+    font-weight: 300;
+  }
+  @media (max-width: 560px) {
+    .analogy { grid-template-columns: 1fr; }
+    .analogy-eq { display: none; }
+  }
+
+  /* ── Pipeline ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    max-width: 860px;
+    margin: 0 auto 3.5rem;
+  }
+  .pipe-step {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+    border-radius: 10px;
+    padding: 1.2rem 1rem;
+    text-align: center;
+  }
+  .pipe-num {
+    width: 26px; height: 26px;
+    background: var(--blue); color: white;
+    border-radius: 50%;
+    font-size: 0.78rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.55rem;
+  }
+  .pipe-title {
+    font-size: 0.88rem; font-weight: 700;
+    color: var(--blue-dark); margin-bottom: 0.35rem;
+  }
+  .pipe-desc {
+    font-size: 0.76rem; color: var(--muted); line-height: 1.45;
+  }
+  .pipe-arrow {
+    font-size: 1.3rem; color: var(--blue);
+    padding: 0 0.7rem; flex-shrink: 0;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 600px) {
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { transform: rotate(90deg); padding: 0.3rem 0; }
+  }
+
+  footer {
+    text-align: center; font-size: 0.78rem; color: var(--muted);
+    padding: 2rem; border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Harmonic Representations in Symbolic Music Transformers<br>are Localized and Controllable</h1>
+  <div class="subtitle">A case study on Aria (LLaMA-based piano transformer) and J.S. Bach chorales.</div>
+  <div style="margin-top:0.7rem;font-size:1rem;color:rgba(255,255,255,0.95);">
+    Adi Silberschein<sup>1</sup> &nbsp; Megan Wei<sup>2</sup> &nbsp; Tamar Rott Shaham<sup>3</sup>
+  </div>
+  <div style="margin-top:0.35rem;font-size:0.8rem;color:rgba(255,255,255,0.7);">
+    <sup>1</sup>Weizmann Institute of Science &nbsp;&nbsp;
+    <sup>2</sup>Brown University &nbsp;&nbsp;
+    <sup>3</sup>MIT CSAIL
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
+    <a href="#" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;border-radius:999px;background:#1e3a8a;color:#fff;font-size:0.82rem;font-weight:600;text-decoration:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Paper
+    </a>
+    <a href="https://github.com/adiSilber/harmonic-interp" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;border-radius:999px;background:#1f2937;color:#fff;font-size:0.82rem;font-weight:600;text-decoration:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.185 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.026 2.747-1.026.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.203 22 16.447 22 12.021 22 6.484 17.523 2 12 2z"/></svg>
+      Code
+    </a>
+  </div>
+</header>
+
+<main>
+
+<!-- ── Abstract ── -->
+<div class="section" style="max-width:760px;margin:0 auto 2.5rem;">
+  <h2 style="font-size:1.25rem;margin-bottom:1rem;">What Does a Music Transformer Know About Harmony?</h2>
+  <p>Transformer models trained on symbolic music have become remarkably capable — yet how they internally represent musical structure remains largely opaque. When a model navigates a cadence (a chord resolution that signals the end of a phrase), does it "know" what key it is in? Does it track mode (whether the music is major or minor)? And can that knowledge be used to directly control what it generates?</p>
+  <p style="margin-top:0.85rem;">We study these questions through a case study using Aria, a LLaMA-based symbolic music transformer, evaluated on Bach chorales. Using activation patching, we find that harmonic decisions are causally localized to middle layers. Linear probes tell the same story: mode (major/minor) becomes cleanly decodable at roughly the same layers where patching identifies causal concentration, while tonic identity emerges later.</p>
+  <p style="margin-top:0.85rem;">We then show these representations are directly actionable. Steering the model along latent directions corresponding to harmonic change reliably elicits a deceptive resolution — while preserving structural coherence and generation quality. The model's internal harmonic knowledge, it turns out, can be directly manipulated at inference time to control its output.</p>
+</div>
+
+<!-- ── Pipeline ── -->
+<div class="pipeline">
+  <div class="pipe-step" style="border-top-color:#2563eb;background:#eff6ff;">
+    <div class="pipe-num" style="background:#2563eb;">1</div>
+    <div class="pipe-title" style="color:#1e3a8a;">Activation Patching</div>
+    <div class="pipe-desc">Where are harmonic decisions causally localized in the model?</div>
+  </div>
+  <div class="pipe-arrow" style="color:#7c3aed;">→</div>
+  <div class="pipe-step" style="border-top-color:#7c3aed;background:#f5f3ff;">
+    <div class="pipe-num" style="background:#7c3aed;">2</div>
+    <div class="pipe-title" style="color:#4c1d95;">Linear Probing</div>
+    <div class="pipe-desc">What harmonic features are encoded, and at which layers?</div>
+  </div>
+  <div class="pipe-arrow" style="color:#059669;">→</div>
+  <div class="pipe-step" style="border-top-color:#059669;background:#ecfdf5;">
+    <div class="pipe-num" style="background:#059669;">3</div>
+    <div class="pipe-title" style="color:#065f46;">Steering Vectors</div>
+    <div class="pipe-desc">Can we directly manipulate harmonic output at inference time?</div>
+  </div>
+</div>
+
+<!-- ── Motivation ── -->
+<div class="section motivation">
+  <div class="section-label">Motivation 1</div>
+  <h2>Finding where harmonic information is represented</h2>
+  <p>
+    Activation patching is a standard tool in NLP interpretability: run the model on two inputs that differ in one specific way, inject the hidden representation from one run into the other at one layer during the forward pass, let it continue normally, and observe only what comes out. If the output shifts, we infer that the patched representation causally carries the information. This is the basic intuition behind causal abstraction: intervening on an internal representation to test whether it corresponds to a hypothesized computational variable.
+  </p>
+  <p>
+    Applying this to symbolic music requires constructing a meaningful factual/counterfactual pair (two inputs that differ in exactly one harmonic property) can be challenging: Notes are represented by several tokens each (in Aria, pitch, onset, and duration are three separate tokens), so a single harmonic shift touches many of them simultaneously. And unlike most of NLP tasks, where generation can have one correct answer, free generation has no single correct continuation, making it hard to know what success even looks like.
+  </p>
+  <figure class="fig">
+    <img src="figures/tokenization_tokens.png" alt="Piano roll with token annotations" style="max-width:480px;display:block;margin:0 auto;">
+    <figcaption>Each note is three sequential tokens: pitch, onset, duration. A single harmonic quality spans many such tokens, making it hard to isolate with one change.</figcaption>
+  </figure>
+
+  <p>
+    We suggest using <strong>cadences</strong>. The major V→I resolution gives us a reasonable ground-truth baseline, and the third of the dominant chord
+    is a single pitch token, the note that determines whether the cadence feels major or minor and with it the entire harmonic meaning of the resolution.
+    One token swap may be enough to redirect the model's continuation entirely.
+  </p>
+
+  <div class="analogy">
+    <div class="analogy-side nlp">
+      <div class="analogy-tag">Classic NLP example</div>
+      <div class="analogy-run">Run 1: <strong>"Rome is the capital of Italy"</strong></div>
+      <div class="analogy-run">Run 2: <strong>"Paris is the capital of France"</strong></div>
+      <div class="analogy-change">One token changed: Rome → Paris</div>
+      <div class="analogy-q">Paris is the capital of ___ <span style="color:var(--muted);font-size:0.85em;">(France, obvious)</span></div>
+    </div>
+    <div class="analogy-eq">≈</div>
+    <div class="analogy-side music">
+      <div class="analogy-tag">Our music equivalent</div>
+      <div class="analogy-run">Run 1: <strong>Chorale ending on V (major dominant)</strong></div>
+      <div class="analogy-run">Run 2: <strong>Same chorale, ending on v (minor dominant)</strong></div>
+      <div class="analogy-change">One token changed: major third → minor third</div>
+      <div class="analogy-q">The next generated harmony is ___ <span style="color:var(--muted);font-size:0.85em;">(not obvious)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Setup ── -->
+<div class="section">
+  <div class="section-label">Setup</div>
+  <h2>One note. Two harmonic worlds.</h2>
+  <p>
+    We take Bach chorales at their V→I cadence point and lower the third of the dominant chord by a semitone, turning V into v.
+    Same rhythm, same voice leading. Only the harmonic quality of the dominant changes.
+    We then run Aria on both versions and observe what each yields.
+  </p>
+
+  <div class="audio-row" style="max-width:600px;margin-left:auto;margin-right:auto;">
+    <div class="acard">
+      <div class="alabel"><span class="tag tag-major">Original</span></div>
+      <div class="asub">The dominant chord's last beat carries a major third (highlighted in yellow)</div>
+      <div class="roll-wrap"><canvas data-key="minorization/chorale_0111_cut_tick_40_major" data-color="#b91c1c" data-pair="minorization/chorale_0111_cut_tick_40_minor"></canvas></div>
+      <audio controls src="audio/minorization/chorale_0111_cut_tick_40_major.mp3"></audio>
+    </div>
+    <div class="acard">
+      <div class="alabel"><span class="tag tag-minor">Counterfactual</span></div>
+      <div class="asub">The dominant chord's last beat carries a lowered third (highlighted in yellow)</div>
+      <div class="roll-wrap"><canvas data-key="minorization/chorale_0111_cut_tick_40_minor" data-color="#1e40af" data-pair="minorization/chorale_0111_cut_tick_40_major"></canvas></div>
+      <audio controls src="audio/minorization/chorale_0111_cut_tick_40_minor.mp3"></audio>
+    </div>
+  </div>
+
+  <figure class="fig">
+    <img src="figures/chord_distributions_major_vs_minor.png" alt="Resolution distributions">
+    <figcaption><strong>One note shifts the whole resolution distribution.</strong>
+    In major-source chorales, I resolutions drop from ~85% to ~55%. In minor-source chorales, i resolutions drop from ~65% to ~32%, with mass shifting toward VI and I.</figcaption>
+  </figure>
+</div>
+
+<!-- ── Where ── -->
+<div class="section">
+  <div class="section-label">Finding 1 · Where</div>
+  <h2>Harmonic information builds progressively from middle layers onward</h2>
+  <p>Activation patching: one layer at a time, we replace the residual stream at the last token position in the original run with the counterfactual's, let the run continue, and measure how much the output shifts toward the counterfactual's harmony, by looking at samples where the first generated pitch belongs to one resolution chord but not the other.</p>
+
+  <div class="finding">
+    Major chorales: near zero causal effect in layers 0–5, signal emerges at layer 6.
+    Minor chorales: a more gradual rise from layer 4 onward.
+    In both cases, harmonic computation is not present from the start; it develops progressively.
+  </div>
+
+  <figure class="fig" style="max-width:620px;margin:0 auto;">
+    <img src="figures/disambiguating_accuracy_with_ci_bands.png" alt="IIA per layer">
+    <figcaption><strong>Interchange Intervention Accuracy (IIA) per layer.</strong>
+    Fraction of cases where patching the counterfactual's activation causes the model to adopt the counterfactual's resolution. Shaded: 95% CI.</figcaption>
+  </figure>
+
+  <p>What patching sounds like (same prompt, internal state replaced at layer 8):</p>
+  <div class="audio-row" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="acard">
+      <div class="alabel"><span class="tag tag-major">Original</span></div>
+      <div class="asub">Unmodified prompt; the changed note is highlighted in yellow</div>
+      <div class="asub" style="color:#1e3a8a;font-weight:600;">First chord: A major</div>
+      <div class="roll-wrap"><canvas data-key="continuations/chorale_0004_cut_tick_52_seed_42_original" data-color="#b91c1c" data-pair="continuations/chorale_0004_cut_tick_52_seed_42_minorized" data-ctrl="pg-o0" data-group-dur="12500"></canvas></div>
+      <audio id="pg-o0" class="sm" controls src="audio/continuations/chorale_0004_cut_tick_52_seed_42_original.mp3"></audio>
+    </div>
+    <div class="acard">
+      <div class="alabel"><span class="tag tag-minor">Counterfactual</span></div>
+      <div class="asub">Prompt with one pitch lowered; the changed note is highlighted in yellow</div>
+      <div class="asub" style="color:#1e3a8a;font-weight:600;">First chord: A minor</div>
+      <div class="roll-wrap"><canvas data-key="continuations/chorale_0004_cut_tick_52_seed_42_minorized" data-color="#1e40af" data-pair="continuations/chorale_0004_cut_tick_52_seed_42_original" data-ctrl="pg-m0" data-group-dur="12500"></canvas></div>
+      <audio id="pg-m0" class="sm" controls src="audio/continuations/chorale_0004_cut_tick_52_seed_42_minorized.mp3"></audio>
+    </div>
+    <div class="acard">
+      <div class="alabel"><span class="tag tag-patch">Patched L8</span></div>
+      <div class="asub">Same prompt as original; the changed note is highlighted in yellow</div>
+      <div class="asub" style="color:#1e3a8a;font-weight:600;">First chord: A minor, matching the counterfactual</div>
+      <div class="roll-wrap"><canvas data-key="patching/chorale_0004_cut_tick_52_layer8" data-color="#b45309" data-pair="continuations/chorale_0004_cut_tick_52_seed_42_minorized" data-ctrl="pg-p0" data-group-dur="12500"></canvas></div>
+      <audio id="pg-p0" class="sm" controls src="audio/patching/chorale_0004_cut_tick_52_layer8.mp3"></audio>
+    </div>
+  </div>
+</div>
+
+<!-- ── Motivation 2 ── -->
+<div class="section motivation">
+  <div class="section-label">Motivation 2</div>
+  <h2>What does the model actually encode in those layers?</h2>
+  <p>
+    Having located the causally active layers, we ask what harmonic information is encoded there.
+    We train a separate linear probe on each layer's residual stream, testing whether major/minor mode and key identity are linearly decodable at each depth,
+    and whether the accuracy peaks align with the layers where patching found its effect.
+    Key identity spans 18 classes rather than 24: not all keys appear in the Bach corpus.
+  </p>
+</div>
+
+<!-- ── What form ── -->
+<div class="section">
+  <div class="section-label">Finding 2 · What form</div>
+  <h2>What harmonic structure is encoded in the layers that matter?</h2>
+
+  <div class="finding">
+    Major/minor mode accuracy reaches 83.5% at layers 8–9, suggesting the model's middle layers may carry information about the mode of the piece.
+    Key identity rises later, from layer 10, reaching 69.8% at layer 15, hinting that coarse tonal structure precedes finer-grained key identity.
+  </div>
+
+  <figure class="fig" style="max-width:620px;margin:0 auto;">
+    <img src="figures/probe_accuracy_by_layer.png" alt="Probe accuracy by layer">
+    <figcaption><strong>Linear probe accuracy per layer.</strong> Mode (chance 50%) and key identity (chance 5.6%).</figcaption>
+  </figure>
+</div>
+
+<!-- ── Music theory geometry ── -->
+<div class="section">
+  <div class="section-label">Finding 3 · Geometry</div>
+  <h2>The model's internal space mirrors music theory</h2>
+  <p>
+    We group the 18 keys in two ways: by shared key signature (relative pairs: C major ↔ A minor)
+    or by shared tonic (parallel pairs: C major ↔ C minor). Which grouping resolves the most probe errors?
+  </p>
+
+  <div class="finding">
+    Relative-grouped: 84.4%. &nbsp;Parallel-grouped: 68.6%, essentially the same as the full probe (69.8%).<br>
+    This suggests the model may group relative keys more closely in its representation space, consistent with music theory: relative keys share their full pitch collection, while parallel keys differ by three pitches.
+  </div>
+
+  <figure class="fig" style="max-width:620px;margin:0 auto;">
+    <img src="figures/key_probe_parallel_confusion_by_layer.png" alt="Probe grouping comparison">
+    <figcaption><strong>Relative vs. parallel key grouping, across layers.</strong></figcaption>
+  </figure>
+
+  <div class="fig-row" style="grid-template-columns: 1fr 1fr 1fr;">
+    <figure class="fig">
+      <img src="figures/key_probe_confusion_recall_precision_layer15.png" alt="Full key probe confusion">
+      <figcaption><strong>Full probe (layer 15).</strong> Errors cluster at relative pairs: C maj ↔ A min, G maj ↔ E min.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figures/relative_grouped_key_probe_confusion_layer15.png" alt="Relative-grouped confusion">
+      <figcaption><strong>Relative-grouped probe (layer 15).</strong> When trained with relative pairs sharing one label (C major + A minor → C/Am), the probe yields a much cleaner diagonal, directly mirroring the pair-wise clustering visible in the full confusion matrix on the left.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figures/parallel_grouped_key_probe_confusion_layer15.png" alt="Parallel-grouped confusion">
+      <figcaption><strong>Tonic probe (layer 15).</strong> Trained to predict the tonic pitch class regardless of mode (C major + C minor → C), the diagonal is weaker: parallel keys are harder for the model to separate than relative ones.</figcaption>
+    </figure>
+  </div>
+
+  <p style="font-size:0.88rem; color:var(--text); font-style:italic;">
+    No music theory was given during training. The model learned this geometry from data alone.
+  </p>
+</div>
+
+<!-- ── Motivation 3 ── -->
+<div class="section motivation">
+  <div class="section-label">Motivation 3</div>
+  <h2>Can we redirect a harmonic decision already in progress?</h2>
+  <p>
+    We return to the cadence, the same point where patching identified causal concentration.
+    This is where the model appears to commit to a harmonic resolution, and where intervening on its internal
+    state may give more direct access to the generative decision.
+  </p>
+</div>
+
+<!-- ── Steering ── -->
+<div class="section">
+  <div class="section-label">Finding 4 · Control</div>
+  <h2>Can the probes we trained be used to steer the model's harmonic output?</h2>
+  <p>
+    The probe weight vectors live in the same space as the model's hidden states.
+    Taking the difference between two class representatives gives a displacement that points from one harmonic class toward another.
+    Injecting a scaled version of this displacement at inference time nudges the model's internal state toward the target class.
+  </p>
+  <figure class="fig" style="max-width:640px;margin:1rem auto;">
+    <img src="figures/steering_concept.png" alt="Steering displacement schematic">
+    <figcaption>
+      For each layer <em>l</em>, the probe learns one weight vector w<sub>c</sub> per class.
+      The displacement δ<sub>l</sub> = w<sub>target,l</sub> − w<sub>source,l</sub> points from one class representative toward another.
+      Normalized and scaled to match the typical hidden state norm at that layer,
+      injecting α·δ̂<sub>l</sub> shifts the hidden state h<sub>l</sub> toward the target class region,
+      nudging the model to believe the context of the chorale had been in the target key.
+    </figcaption>
+  </figure>
+  <p>
+    We test three steering targets, each applied at the layers and positions where the probes found the strongest signal:
+    relative minor (layers 11–15, all positions, α=0.20);
+    parallel minor (layers 11–15, all positions, α=0.10);
+    and mode (layers 4–15, last bar only, α=0.25).
+    The model is not retrained; only the hidden states are nudged at inference time, and we observe what harmonies Aria generates next.
+  </p>
+
+  <p>
+    For relative and parallel minor, the target is clear: we hope to hear the continuation move toward the relative minor (vi)
+    or parallel minor (i) respectively. For mode steering, there is no single target key. We hope for a shift toward
+    some minor tonality, ideally one close to the original in the sense of few new accidentals.
+    In that sense, relative minor is the most natural landing point.
+  </p>
+
+  <p>Selected examples where the steered continuation resolves to the intended target harmony:</p>
+  <div class="sgrid">
+    <div></div>
+    <div class="sgrid-head">Example 1</div>
+    <div class="sgrid-head">Example 2</div>
+    <div class="sgrid-head">Example 3</div>
+
+    <div class="sgrid-note"><strong>Relative minor</strong>: resolves toward vi</div>
+    <div class="sgrid-label">Rel. minor</div>
+    <div><div class="roll-wrap"><canvas data-key="rel_min/test_chorale_0058_cut_tick_84_rel_min" data-color="#1d4ed8" data-ctrl="rm-s0" data-group-dur="15500"></canvas></div><audio id="rm-s0" class="sm" controls src="audio/rel_min/test_chorale_0058_cut_tick_84_rel_min.mp3"></audio></div>
+    <div><div class="roll-wrap"><canvas data-key="rel_min/test_chorale_0000_cut_tick_180_rel_min" data-color="#1d4ed8" data-ctrl="rm-s1" data-group-dur="28760"></canvas></div><audio id="rm-s1" class="sm" controls src="audio/rel_min/test_chorale_0000_cut_tick_180_rel_min.mp3"></audio></div>
+    <div><div class="roll-wrap"><canvas data-key="rel_min/eval_chorale_0053_cut_tick_148_rel_min" data-color="#1d4ed8" data-ctrl="rm-s2" data-group-dur="22000"></canvas></div><audio id="rm-s2" class="sm" controls src="audio/rel_min/eval_chorale_0053_cut_tick_148_rel_min.mp3"></audio></div>
+
+    <div class="sgrid-sep"></div>
+
+    <div class="sgrid-note"><strong>Parallel minor</strong>: resolves toward i</div>
+    <div class="sgrid-label">Par. minor</div>
+    <div><div class="roll-wrap"><canvas data-key="par_min/test_chorale_0058_cut_tick_84_par_min" data-color="#7c3aed" data-ctrl="pm-s0" data-group-dur="15500"></canvas></div><audio id="pm-s0" class="sm" controls src="audio/par_min/test_chorale_0058_cut_tick_84_par_min.mp3"></audio></div>
+    <div><div class="roll-wrap"><canvas data-key="par_min/test_chorale_0000_cut_tick_180_par_min" data-color="#7c3aed" data-ctrl="pm-s1" data-group-dur="28760"></canvas></div><audio id="pm-s1" class="sm" controls src="audio/par_min/test_chorale_0000_cut_tick_180_par_min.mp3"></audio></div>
+    <div><div class="roll-wrap"><canvas data-key="par_min/eval_chorale_0053_cut_tick_148_par_min" data-color="#7c3aed" data-ctrl="pm-s2" data-group-dur="22000"></canvas></div><audio id="pm-s2" class="sm" controls src="audio/par_min/eval_chorale_0053_cut_tick_148_par_min.mp3"></audio></div>
+
+    <div class="sgrid-sep"></div>
+
+    <div class="sgrid-note"><strong>Mode</strong>: diffuse redistribution</div>
+    <div class="sgrid-label">Mode</div>
+    <div><div class="roll-wrap"><canvas data-key="mode/test_chorale_0058_cut_tick_84_mode" data-color="#dc2626" data-ctrl="md-s0" data-group-dur="15500"></canvas></div><audio id="md-s0" class="sm" controls src="audio/mode/test_chorale_0058_cut_tick_84_mode.mp3"></audio><div style="font-size:0.72rem;color:var(--muted);margin-top:3px;">G major → vi<sup>6</sup> (E minor, relative minor)</div></div>
+    <div><div class="roll-wrap"><canvas data-key="mode/test_chorale_0000_cut_tick_180_mode" data-color="#dc2626" data-ctrl="md-s1" data-group-dur="28760"></canvas></div><audio id="md-s1" class="sm" controls src="audio/mode/test_chorale_0000_cut_tick_180_mode.mp3"></audio><div style="font-size:0.72rem;color:var(--muted);margin-top:3px;">F major → vi<sup>6</sup> (D minor, relative minor)</div></div>
+    <div><div class="roll-wrap"><canvas data-key="mode/eval_chorale_0053_cut_tick_148_mode" data-color="#dc2626" data-ctrl="md-s2" data-group-dur="22000"></canvas></div><audio id="md-s2" class="sm" controls src="audio/mode/eval_chorale_0053_cut_tick_148_mode.mp3"></audio><div style="font-size:0.72rem;color:var(--muted);margin-top:3px;">G major → i<sup>6</sup> (G minor, parallel minor)</div></div>
+  </div>
+
+  <p>Across all test cuts, the full resolution distribution shifts as follows:</p>
+
+  <figure class="fig">
+    <img src="figures/first_chord_grouped_harmonic_categories.png" alt="Harmonic categories under steering">
+    <figcaption><strong>Cadence resolutions under steering.</strong>
+    Unsteered: almost always I. Relative minor: mass shifts to vi. Parallel minor: decisive shift to i.
+    Mode steering: reduces I but spreads broadly. Numbers = sample counts.</figcaption>
+  </figure>
+
+  <p style="font-size:0.83rem; color:var(--muted); font-style:italic;">
+    <strong style="color:var(--text);">Note on mode steering:</strong>
+    the largest share of redistributed mass went to chromatic or irregular harmonies, not concentrating toward any target key
+    even after combining mode and tonic probes across many α values <span style="font-style:normal;font-size:0.78rem;color:var(--muted);">(a separate experiment; results not shown here)</span>.
+    Mode is readable but harder to steer than key identity.
+  </p>
+
+  <div class="finding red">
+    Parallel minor steering (α=0.10, layers 11–15) is more decisive than relative minor (α=0.20), because parallel keys are more separated in the model's own representation space.
+  </div>
+</div>
+
+<!-- ── Generation Quality ── -->
+<div class="section">
+  <div class="section-label">Quality check</div>
+  <h2>Does steering degrade the generation?</h2>
+  <p>
+    A natural concern is that steering simply inflates the probability mass on the tonic chord of the target key, rather than producing genuinely varied musical output. We measure generation quality across four dimensions: structural integrity, local note statistics, perceptual similarity to Bach, and harmonic variety.
+  </p>
+  <div class="fig" style="overflow-x:auto;margin:1rem 0;">
+  <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+    <thead>
+      <tr style="background:var(--blue-light);color:var(--blue-mid);">
+        <th style="text-align:left;padding:0.4rem 0.7rem;font-weight:700;border-bottom:2px solid var(--blue-mid);" rowspan="2">Condition</th>
+        <th style="text-align:center;padding:0.4rem 0.5rem;font-weight:700;border-bottom:2px solid var(--blue-mid);border-left:2px solid var(--blue-mid);" rowspan="2">Layers<br>steered</th>
+        <th colspan="3" style="padding:0.4rem 0.5rem;text-align:center;border-bottom:1px solid var(--blue-mid);border-left:2px solid var(--blue-mid);">Sequence-level</th>
+        <th colspan="3" style="padding:0.4rem 0.5rem;text-align:center;border-bottom:1px solid var(--blue-mid);border-left:2px solid var(--blue-mid);">Note-level</th>
+        <th colspan="1" style="padding:0.4rem 0.5rem;text-align:center;border-bottom:1px solid var(--blue-mid);border-left:2px solid var(--blue-mid);">Quality</th>
+        <th colspan="2" style="padding:0.4rem 0.5rem;text-align:center;border-bottom:1px solid var(--blue-mid);border-left:2px solid var(--blue-mid);">Harmony</th>
+      </tr>
+      <tr style="background:var(--blue-light);color:var(--blue-mid);font-size:0.72rem;">
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-left:2px solid var(--blue-mid);">Struct.<br>error (%) ↓</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;">Pitch<br>repeat (%) ↓</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-right:1px solid #ccd;">Avg gen.<br>dur. (ms)</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-left:2px solid var(--blue-mid);">Out of<br>range (%) ↓</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;">Note dur.<br>avg (ms)</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-right:1px solid #ccd;">Pitch<br>var.</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-left:2px solid var(--blue-mid);border-right:1px solid #ccd;">FAD ↓</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;border-left:2px solid var(--blue-mid);">RN entropy<br>(bits)</th>
+        <th style="padding:0.35rem 0.45rem;text-align:right;">Top-1 dom.<br>(%) ↓</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-top:1px solid var(--border);">
+        <td style="padding:0.45rem 0.7rem;font-weight:600;">Baseline (no steering)</td>
+        <td style="padding:0.45rem 0.45rem;text-align:center;color:var(--muted);border-left:2px solid var(--blue-mid);">n/a</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.8</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">3650</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">721</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">59</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);border-right:1px solid #ccd;">0.029</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">1.5</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">52.0</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border);background:#fafbff;">
+        <td style="padding:0.45rem 0.7rem;font-weight:600;">Relative minor (α=0.2)</td>
+        <td style="padding:0.45rem 0.45rem;text-align:center;color:var(--muted);border-left:2px solid var(--blue-mid);white-space:nowrap;">11–15, all pos.</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.8</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">0.8</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">3714</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">1.7</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">720</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">60</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);border-right:1px solid #ccd;">0.037</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">1.6</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">50.5</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border);">
+        <td style="padding:0.45rem 0.7rem;font-weight:600;">Parallel minor (α=0.1)</td>
+        <td style="padding:0.45rem 0.45rem;text-align:center;color:var(--muted);border-left:2px solid var(--blue-mid);white-space:nowrap;">11–15, all pos.</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">3853</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">759</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">62</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);border-right:1px solid #ccd;">0.029</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">1.7</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">45.9</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border);background:#fafbff;">
+        <td style="padding:0.45rem 0.7rem;font-weight:600;">Mode (α=0.25)</td>
+        <td style="padding:0.45rem 0.45rem;text-align:center;color:var(--muted);border-left:2px solid var(--blue-mid);white-space:nowrap;">4–15, last bar</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.8</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">0.0</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">3500</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">0.8</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">715</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-right:1px solid #ccd;">65</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);border-right:1px solid #ccd;">0.033</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);border-left:2px solid var(--blue-mid);">1.9</td>
+        <td style="padding:0.45rem 0.45rem;text-align:right;color:var(--muted);">38.4</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.72rem;color:var(--muted);margin-top:0.6rem;line-height:1.5;">
+    <strong>Sequence-level:</strong> structural error = malformed pitch/onset/duration token triple; pitch repeat = generation of ≥4 identical pitches; avg gen. duration = length of the generated continuation.
+    <strong>Note-level:</strong> out of range = ≥3 generated notes outside the normal piano range; note dur. avg = average duration of the generated notes; pitch var. = pitch variance across the generation.
+    <strong>FAD</strong> = Fréchet Audio Distance against Bach's own continuations (VGGish, 16 kHz); lower is closer to Bach's style.
+    <strong>Harmony:</strong> RN entropy = Shannon entropy of the chord distribution over the first generated bar (higher = more varied; ideally close to the baseline; steering should shift harmony, not collapse it); top-1 dominance = fraction of the first generated bar occupied by the single most common chord (lower = less repetitive).
+  </p>
+  </div>
+  <p style="margin-top:0.9rem;">
+    Overall, steered generations remain close to the unsteered baseline across these metrics: structural integrity holds and harmonic variety is maintained, suggesting the steering does not meaningfully degrade the generation.
+  </p>
+</div>
+
+<!-- ── Finding 5 · Modularity ── -->
+<div class="section">
+  <div class="section-label">Finding 5 · Modularity</div>
+  <h2>One layer carries most of the steering effect</h2>
+  <p>
+    Readable information across many layers does not mean all layers are equally causally responsible.
+    For relative minor, no single layer was sufficient to redirect the resolution.
+    For parallel minor, steering layer 12 alone (α=0.40) shifts 61% of resolutions to i,
+    nearly matching all five layers (11–15) at α=0.10.
+  </p>
+  <figure class="fig" style="max-width:620px;margin:1rem auto;">
+    <img src="figures/parmin_layer12_vs_all.png" alt="Layer 12 vs all layers parallel minor">
+    <figcaption>Resolution distribution for parallel minor steering: all layers 11–15 at α=0.10 vs. layer 12 alone at α=0.40. Numbers = sample counts.</figcaption>
+  </figure>
+</div>
+
+<!-- ── Takeaway ── -->
+<div class="takeaway">
+  <div class="tk-label">Takeaway</div>
+  <p>
+    Our findings suggest that symbolic music transformers develop internal representations of tonal harmony
+    that appear structured, localized, and to some extent directly manipulable,
+    encoding mode before key, confusing exactly what music theory says is ambiguous,
+    and responding to targeted steering in musically interpretable ways.
+    All of this emerged from predicting the next token. No explicit rules were provided.
+  </p>
+  <div class="future">
+    <strong>One direction this opens:</strong> using internal representations as reward signals.
+    If the residual stream encodes harmonic structure, probes trained on key or mode could serve as soft verifiers
+    during training or generation, a reward grounded in the model's own learned sense of harmony,
+    not in hand-written rules. This might offer a path toward evaluating whether a generated Bach piece is
+    genuinely coherent and new, rather than just statistically plausible. To the best of our knowledge,
+    no existing tool can reliably generate a new Bach chorale that is both harmonically authentic and genuinely novel.
+  </div>
+</div>
+
+
+<!-- ── Related Work ── -->
+<div class="section" style="margin:3rem 0 0;">
+  <h2 style="font-size:1.1rem;margin-bottom:1.2rem;">Related Work</h2>
+
+  <div style="display:flex;flex-direction:column;gap:1.4rem;">
+
+    <div>
+      <a href="https://rome.baulab.info/" style="font-size:0.92rem;font-weight:600;color:var(--blue);text-decoration:none;">Locating and Editing Factual Associations in GPT</a>
+      <div style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0 0.5rem;">Meng, Bau, Andonian, Belinkov &mdash; NeurIPS 2022</div>
+      <a href="https://rome.baulab.info/">
+        <img src="figures/related_rome.png" alt="ROME causal traces figure" style="width:512px;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:0.5rem;">
+      </a>
+      <div style="font-size:0.82rem;color:var(--text);"><strong>Notes:</strong> Introduced causal tracing (activation patching) to localize factual associations in GPT. Our patching methodology directly adapts this approach to symbolic music.</div>
+    </div>
+
+    <div>
+      <a href="https://arxiv.org/abs/2410.00872" style="font-size:0.92rem;font-weight:600;color:var(--blue);text-decoration:none;">Do Music Generation Models Encode Music Theory?</a>
+      <div style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0 0.5rem;">Wei, Freeman, Donahue, Sun &mdash; ISMIR 2024</div>
+      <a href="https://arxiv.org/abs/2410.00872">
+        <img src="figures/related_magen.png" alt="Wei et al. 2024 figure" style="width:512px;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:0.5rem;">
+      </a>
+      <div style="font-size:0.82rem;color:var(--text);"><strong>Notes:</strong> Probed music generation models (Jukebox, MusicGen) for music theory concepts using linear classifiers on a synthetic dataset. Our work extends this line of inquiry to causal localization and active steering.</div>
+    </div>
+
+    <div>
+      <a href="https://jmlr.org/papers/v26/23-0058.html" style="font-size:0.92rem;font-weight:600;color:var(--blue);text-decoration:none;">Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability</a>
+      <div style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0 0.5rem;">Geiger et al. &mdash; JMLR 2025</div>
+      <a href="https://jmlr.org/papers/v26/23-0058.html">
+        <img src="figures/related_causal.png" alt="Causal Abstraction figure" style="width:512px;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:0.5rem;">
+      </a>
+      <div style="font-size:0.82rem;color:var(--text);"><strong>Notes:</strong> Provides the theoretical grounding for mechanistic interpretability via causal models. Our patching experiments are grounded in this framework.</div>
+    </div>
+
+    <div>
+      <a href="https://arxiv.org/abs/2506.23869" style="font-size:0.92rem;font-weight:600;color:var(--blue);text-decoration:none;">Scaling Self-Supervised Representation Learning for Symbolic Piano Performance</a>
+      <div style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0 0.5rem;">Bradshaw, Fan, Spangher, Biderman, Colton &mdash; ISMIR 2025</div>
+      <a href="https://arxiv.org/abs/2506.23869">
+        <img src="figures/related_aria.png" alt="Aria t-SNE composer clustering" style="width:512px;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:0.5rem;">
+      </a>
+      <div style="font-size:0.82rem;color:var(--text);"><strong>Notes:</strong> Introduces Aria, the LLaMA-based symbolic music transformer we study throughout this work.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Citation ── -->
+<div class="section" style="max-width:760px;margin:3rem auto 0;">
+  <h2 style="font-size:1.1rem;margin-bottom:0.8rem;">How to Cite</h2>
+  <pre style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.2rem;font-size:0.78rem;line-height:1.7;overflow-x:auto;color:var(--text);">@misc{silberschein2025harmonic,
+  title={Harmonic Representations in Symbolic Music Transformers are Localized and Controllable},
+  author={Silberschein, Adi and Wei, Megan and Rott Shaham, Tamar},
+  year={2025},
+  eprint={XXXX.XXXXX},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD},
+  url={https://arxiv.org/abs/XXXX.XXXXX}
+}</pre>
+</div>
+
+</main>
+
+<footer>Harmonic Representations in Symbolic Music Transformers are Localized and Controllable</footer>
+
+<script src="piano_roll_data.js"></script>
+<script>
+function drawRoll(canvas, currentMs) {
+  const key     = canvas.dataset.key;
+  const color   = canvas.dataset.color || '#b91c1c';
+  const pairKey = canvas.dataset.pair;
+  const d = MIDI_DATA[key];
+  if (!d || !d.notes || !d.notes.length) return;
+
+  let minP = Math.min(...d.notes.map(n => n.p));
+  let maxP = Math.max(...d.notes.map(n => n.p));
+  if (pairKey && MIDI_DATA[pairKey]) {
+    const pd = MIDI_DATA[pairKey];
+    minP = Math.min(minP, ...pd.notes.map(n => n.p));
+    maxP = Math.max(maxP, ...pd.notes.map(n => n.p));
+  }
+  minP -= 1; maxP += 1;
+  const pRange = maxP - minP + 1;
+
+  const DPR     = window.devicePixelRatio || 1;
+  const totalMs = canvas.dataset.groupDur ? parseInt(canvas.dataset.groupDur) : d.dur;
+  const W       = canvas.parentElement.clientWidth || 300;
+  const H       = 80;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * DPR;
+  canvas.height = H * DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  const rowH = H / pRange;
+  const toX = ms => (ms / totalMs) * W;
+  const toY = p  => H - (p - minP + 1) * rowH;
+
+  ctx.fillStyle = '#f4f4f4'; ctx.fillRect(0, 0, W, H);
+
+  const pe = d.prompt_end;
+  if (pe) {
+    ctx.fillStyle = 'rgba(210,225,245,0.55)'; ctx.fillRect(0, 0, toX(pe), H);
+    ctx.fillStyle = 'rgba(245,235,235,0.40)'; ctx.fillRect(toX(pe), 0, W - toX(pe), H);
+  }
+  for (let p = minP; p <= maxP; p++) {
+    if (p % 12 === 0) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,toY(p),W,rowH); }
+  }
+
+  const origSet = pairKey && MIDI_DATA[pairKey]
+    ? new Set(MIDI_DATA[pairKey].notes.map(n => n.s+','+n.p)) : null;
+  const ba = color.length === 7 ? 'cc' : '';
+  for (const n of d.notes) {
+    const inP = !d.prompt_end || n.s < d.prompt_end;
+    // detect note shifted down (minor canvas) OR shifted up (major canvas)
+    const mod = inP && origSet && !origSet.has(n.s+','+n.p) &&
+      (origSet.has(n.s+','+(n.p+1)) || origSet.has(n.s+','+(n.p-1)));
+    const act = currentMs !== undefined && n.s <= currentMs && n.e > currentMs;
+    const x=toX(n.s), w=Math.max(2,toX(n.e)-x-0.5), y=toY(n.p)+rowH*0.09, h=Math.max(2,rowH*0.82);
+    if (mod) {
+      // shifted note: bold yellow outline + bright fill so it stands out on any background
+      ctx.fillStyle = 'rgba(234,179,8,0.5)';
+      ctx.fillRect(x-2, y-2, w+4, h+4);
+      ctx.fillStyle = act ? '#facc15' : '#d97706';
+    } else if (act) {
+      ctx.fillStyle = 'rgba(100,100,255,0.3)'; ctx.fillRect(x-1,y-1,w+2,h+2);
+      ctx.fillStyle = '#2563eb';
+    } else { ctx.fillStyle = color+ba; }
+    ctx.fillRect(x,y,w,h);
+  }
+
+  if (pe) {
+    const px=toX(pe); ctx.save();
+    ctx.strokeStyle='#555'; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke(); ctx.restore();
+  }
+  if (currentMs !== undefined) {
+    const cx=toX(currentMs); ctx.save();
+    ctx.strokeStyle='rgba(185,28,28,0.85)'; ctx.lineWidth=2; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke(); ctx.restore();
+  }
+}
+
+function renderAll() { document.querySelectorAll('.roll-wrap canvas').forEach(c => drawRoll(c)); }
+
+function linkCanvasAudio(canvas, audio) {
+  let rafId=null;
+  function tick() { drawRoll(canvas, audio.currentTime*1000); if (!audio.paused&&!audio.ended) rafId=requestAnimationFrame(tick); }
+  audio.addEventListener('play',   ()=>{ cancelAnimationFrame(rafId); rafId=requestAnimationFrame(tick); });
+  audio.addEventListener('pause',  ()=>{ cancelAnimationFrame(rafId); drawRoll(canvas, audio.currentTime*1000); });
+  audio.addEventListener('ended',  ()=>{ cancelAnimationFrame(rafId); drawRoll(canvas); });
+  audio.addEventListener('seeked', ()=>{ drawRoll(canvas, audio.currentTime*1000); });
+}
+
+function setupPlayback() {
+  document.querySelectorAll('.acard').forEach(card => {
+    const canvas=card.querySelector('canvas'), audio=card.querySelector('audio');
+    if (canvas&&audio) linkCanvasAudio(canvas, audio);
+  });
+  document.querySelectorAll('canvas[data-ctrl]').forEach(canvas => {
+    const audio=document.getElementById(canvas.dataset.ctrl);
+    if (audio) linkCanvasAudio(canvas, audio);
+  });
+}
+
+renderAll(); setupPlayback();
+let _rt; window.addEventListener('resize', ()=>{ clearTimeout(_rt); _rt=setTimeout(renderAll,120); });
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+# Paper PDF (not tracked in the repo)
+Music_Interp___ISMIR_2026*.pdf
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# IDE
+.idea/
+.vscode/
+*.DS_Store
+
+# ── Upstream aria project ignores ──
+tools/
+data/
+fluidsynth/
+tests/test_results
+lightning_logs/
+paper
+hf
+_scripts
+
+# ── Model weights & HuggingFace downloads (download locally, don't commit) ──
+config/models/aria-medium-base/*
+!config/models/aria-medium-base/.gitkeep
+config/models/aria-medium-gen/*
+!config/models/aria-medium-gen/.gitkeep
+
+# ── Chorale corpus (annotations + cadence cuts, all tracked) ──
+
+# ── Data directories (large / generated) ──
+jsb_chorales_midi/test_16th/*
+jsb_chorales_midi/train_16th/*
+jsb_chorales_midi/valid_16th/*
+!jsb_chorales_midi/test_16th/.gitkeep
+!jsb_chorales_midi/train_16th/.gitkeep
+!jsb_chorales_midi/valid_16th/.gitkeep
+jsb_chorales_xml/*
+!jsb_chorales_xml/.gitkeep
+aria/jsb_data/*
+!aria/jsb_data/.gitkeep
+chorale_continuations/*
+!chorale_continuations/.gitkeep
+chorale_continuations/inputs/*
+!chorale_continuations/inputs/.gitkeep
+chorale_continuations/outputs/*
+!chorale_continuations/outputs/.gitkeep
+docs/midi2/*
+!docs/midi2/.gitkeep
+
+# ── Experiment output directories ──
+experiments/*/
+!experiments/*/
+experiments/*/*
+!experiments/*/results.csv
+
+# ── Website build (local source, docs/ is what gets published) ──
+website_build/
+
+# ── MIDI-LLM future work & slurm (not part of public release) ──
+midi_llm/
+midi_llm_future_work/
+slurm/
+
+# ── Large generated data (too heavy for git; recreate via scripts) ──
+probes_data/
+reproduce_output/
+debug_reproduce_output/
+jsb_chorales_midi/
+fad/
+
+# ── Personal scripts & scratch (not needed by collaborators) ──
+scripts/
+experiments/
+# local vendored copy of EleutherAI's aria; kept on disk, installed via the `aria` dependency
+aria/
+adisi_main.py
+adisi_main_for_minor.py
+adisi_utils/
+run_all_continuations.*
+sixteenth_chords.txt
+outputs_for_manualy_created_midi_tweaked_and_not_tweaked/
+manualy_created_midi/
+per_json_midi/
+per_midi_json/
+debug_stuff/
+slurm/logs/
+
+# ── Cache ──
+cache/
+
+experiments/**/attention_analysis_layers_0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15.csv
+experiments/**/attention_analysis_layers_6_7_8.csv

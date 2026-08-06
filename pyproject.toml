@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harmonic-interp"
+version = "0.0.1"
+description = "Mechanistic interpretability of harmonic representations in symbolic music transformers"
+authors = [
+    {name = "Adi Silberschein"},
+    {name = "Megan Wei"},
+    {name = "Tamar Rott Shaham"},
+]
+requires-python = ">=3.11"
+
+dependencies = [
+    "aria @ git+https://github.com/EleutherAI/aria.git",
+    "ariautils @ git+https://github.com/EleutherAI/aria-utils.git",
+    "torch>=2.3",
+    "safetensors",
+    "jsonlines",
+    "tqdm",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "music21",
+    "mido",
+    "torchaudio",
+    "transformers",
+    "unidecode",
+]
+
+[project.optional-dependencies]
+midillm = [
+    "anticipation @ git+https://github.com/jthickstun/anticipation.git",
+]
+all = [
+    "anticipation @ git+https://github.com/jthickstun/anticipation.git",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["midi_llm", "midi_llm.*"]
